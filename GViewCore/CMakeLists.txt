@@ -23,6 +23,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE -DBUILD_AS_DYNAMIC_LIB)
 target_compile_definitions(${PROJECT_NAME} PRIVATE -DCORE_EXPORTABLE)
 target_include_directories(${PROJECT_NAME} PRIVATE ../3rdPartyLibs/LLVMDemangle/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE LLVMDemangle)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ../3rdPartyLibs/GIFLib/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC GIFLib)
                                                              
 find_package(OpenSSL REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})

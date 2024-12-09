@@ -152,6 +152,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_subdirectory(3rdPartyLibs/LLVMDemangle)
+add_subdirectory(3rdPartyLibs/GIFLib)
 
 add_subdirectory(AppCUI)
 add_subdirectory(GViewCore)
@@ -199,7 +200,8 @@ if(NOT DEFINED CMAKE_TESTING_ENABLED)
     add_subdirectory(Types/JCLASS)
     add_subdirectory(Types/EML)
     add_subdirectory(Types/DOC)
-	  add_subdirectory(Types/JPG)
+	add_subdirectory(Types/JPG)
+    add_subdirectory(Types/GIF)
 
     # Generic plugins supported by GView
     add_subdirectory(GenericPlugins/CharacterTable)
