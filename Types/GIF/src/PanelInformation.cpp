@@ -20,8 +20,12 @@ void Panels::Information::UpdateGeneralInformation()
 
     general->DeleteAllItems();
 
+    for (const auto& issue : gif->GetIssues()) {
+        general->AddItem(issue);
+    } // to be removed later
+
     // File info
-    general->AddItem("File");
+    general->AddItem({ "File", gif->obj->GetPath() });
     general->AddItem({ "Size", tempStr.Format("%s bytes", n.ToString(gif->obj->GetData().GetSize(), { NumericFormatFlags::None, 10, 3, ',' }).data()) });
 
     // GIF Header
@@ -29,46 +33,48 @@ void Panels::Information::UpdateGeneralInformation()
     general->AddItem({ "Signature", std::string(gif->header.signature, 3) });
     general->AddItem({ "Version", std::string(gif->header.version, 3) });
 
-    // // Logical Screen Descriptor
-    // general->AddItem("Logical Screen Descriptor");
-    // general->AddItem({ "Canvas Size", tempStr.Format("%u x %u", gif->screenDescriptor.canvasWidth, gif->screenDescriptor.canvasHeight) });
+    // GIF Information
+    general->AddItem("GIF Information");
 
-    // // Global Color Table Info
-    // const bool hasGlobalColorTable = gif->screenDescriptor.packedFields & 0x80;
-    // general->AddItem({ "Global Color Table", hasGlobalColorTable ? "Yes" : "No" });
+    general->AddItem({ "Canvas Size", tempStr.Format("%dx%d", gif->gifFile->SWidth, gif->gifFile->SHeight) });
 
-    // if (hasGlobalColorTable) {
-    //     const uint8 globalColorTableSize = 1 << ((gif->screenDescriptor.packedFields & 0x07) + 1);
-    //     general->AddItem({ "Global Color Table Size", tempStr.Format("%u", globalColorTableSize) });
-    // }
+    general->AddItem({ "Background Color Index", std::to_string(gif->gifFile->SBackGroundColor) });
 
-    // general->AddItem({ "Background Color Index", tempStr.Format("%u", gif->screenDescriptor.backgroundColorIndex) });
+    general->AddItem({ "Color Resolution", std::to_string(gif->gifFile->SColorResolution) });
 
-    // // Images
-    // general->AddItem("Images");
-    // const size_t imageCount = gif->imageDescriptors.size();
-    // general->AddItem({ "Image Count", tempStr.Format("%zu", imageCount) });
+    if (gif->gifFile->SColorMap) {
+        general->AddItem({ "Global Color Map", std::to_string(gif->gifFile->SColorMap->ColorCount) + " colors" });
+    } else {
+        general->AddItem({ "Global Color Map", "None" });
+    }
 
-    // for (size_t i = 0; i < imageCount; i++) {
-    //     const auto& image = gif->imageDescriptors[i];
-    //     general->AddItem({ tempStr.Format("Image %zu Position", i + 1), tempStr.Format("(%u, %u)", image.leftPosition, image.topPosition) });
-    //     general->AddItem({ tempStr.Format("Image %zu Size", i + 1), tempStr.Format("%u x %u", image.width, image.height) });
-    // }
+    general->AddItem({ "Image Count", std::to_string(gif->gifFile->ImageCount) });
 
-    // // Graphics Control Extensions
-    // if (!gif->controlExtensions.empty()) {
-    //     general->AddItem("Graphics Control Extensions");
-    //     for (size_t i = 0; i < gif->controlExtensions.size(); i++) {
-    //         const auto& gce = gif->controlExtensions[i];
-    //         general->AddItem({ tempStr.Format("Extension %zu Delay Time", i + 1), tempStr.Format("%u ms", gce.delayTime * 10) });
-    //         general->AddItem({ tempStr.Format("Extension %zu Transparent Color Index", i + 1), tempStr.Format("%u", gce.transparentColorIndex) });
-    //     }
-    // }
+    if (gif->gifFile->ImageCount > 0) {
+        general->AddItem("Images");
+        for (int i = 0; i < gif->gifFile->ImageCount; ++i) {
+            const SavedImage& savedImage = gif->gifFile->SavedImages[i];
+
+            general->AddItem(tempStr.Format("Image %d", i + 1));
+            general->AddItem({ "Width", std::to_string(savedImage.ImageDesc.Width) });
+            general->AddItem({ "Height", std::to_string(savedImage.ImageDesc.Height) });
+
+            if (savedImage.ImageDesc.ColorMap) {
+                general->AddItem({ "Local Color Map", std::to_string(savedImage.ImageDesc.ColorMap->ColorCount) + " colors" });
+            } else {
+                general->AddItem({ "Local Color Map", "None" });
+            }
+        }
+    }
 }
 
 void Panels::Information::UpdateIssues()
 {
     issues->DeleteAllItems();
+
+    for (const auto& issue : gif->GetIssues()) {
+        issues->AddItem(issue);
+    }
 
     if (gif->header.signature[0] != 'G' || gif->header.signature[1] != 'I' || gif->header.signature[2] != 'F') {
         issues->AddItem("Invalid GIF signature.");

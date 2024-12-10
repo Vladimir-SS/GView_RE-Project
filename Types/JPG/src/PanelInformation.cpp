@@ -27,18 +27,17 @@ void Panels::Information::UpdateGeneralInformation()
     const auto height = Endian::BigToNative(jpg->sof0MarkerSegment.height);
     general->AddItem({ "Size", tempStr.Format("%u x %u", width, height) });
 
-    // extra info 
+    // extra info
     general->AddItem({ "Density Units", tempStr.Format("%u", jpg->app0MarkerSegment.densityUnits) });
 
     const auto xDensity = Endian::BigToNative(jpg->app0MarkerSegment.xDensity);
     const auto yDensity = Endian::BigToNative(jpg->app0MarkerSegment.yDensity);
-    general->AddItem({ "X Density", tempStr.Format("%u", xDensity)});
-    general->AddItem({ "Y Density", tempStr.Format("%u", yDensity)});
+    general->AddItem({ "X Density", tempStr.Format("%u", xDensity) });
+    general->AddItem({ "Y Density", tempStr.Format("%u", yDensity) });
 
     general->AddItem({ "X Thumbnail", tempStr.Format("%u", jpg->app0MarkerSegment.xThumbnail) });
     general->AddItem({ "Y Thumbnail", tempStr.Format("%u", jpg->app0MarkerSegment.yThumbnail) });
 }
-
 
 void Panels::Information::UpdateIssues()
 {
@@ -50,7 +49,7 @@ void Panels::Information::RecomputePanelsPositions()
     int w  = this->GetWidth();
     int h  = this->GetHeight();
 
-    if ((!general.IsValid()) || (!issues.IsValid())){
+    if ((!general.IsValid()) || (!issues.IsValid())) {
         return;
     }
 
