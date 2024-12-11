@@ -36,17 +36,26 @@ void CreateImageView(Reference<GView::View::WindowInterface> win, Reference<GIF:
     win->CreateViewer(settings);
 }
 
-// void CreateBufferView(Reference<GView::View::WindowInterface> win, Reference<GIF::GIFFile> gif)
+// void CreateContainerView(Reference<GView::View::WindowInterface> win, Reference<GIF::GIFFile> zip)
 // {
-//     BufferViewer::Settings settings;
+//     ContainerViewer::Settings settings;
+
+//     win->CreateViewer(settings);
 // }
+
+void CreateBufferView(Reference<GView::View::WindowInterface> win, Reference<GIF::GIFFile> gif)
+{
+    BufferViewer::Settings settings;
+    gif->selectionZoneInterface = win->GetSelectionZoneInterfaceFromViewerCreation(settings);
+}
 
 PLUGIN_EXPORT bool PopulateWindow(Reference<GView::View::WindowInterface> win)
 {
     auto gif = win->GetObject()->GetContentType<GIF::GIFFile>();
     gif->Update();
 
-    // CreateContentView(win, gif);
+    // CreateContainerView(win, gif);
+    CreateBufferView(win, gif);
     CreateImageView(win, gif);
 
     win->AddPanel(Pointer<TabPage>(new GIF::Panels::Information(gif)), true);
