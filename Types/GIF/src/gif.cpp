@@ -24,7 +24,15 @@ void CreateImageView(Reference<GView::View::WindowInterface> win, Reference<GIF:
 {
     GView::View::ImageViewer::Settings settings;
     settings.SetLoadImageCallback(gif.ToBase<View::ImageViewer::LoadImageInterface>());
-    settings.AddImage(0, gif->obj->GetData().GetSize());
+
+    for (uint32_t i = 0; i < gif->gifFile->ImageCount; ++i) {
+        const SavedImage& savedImage = gif->gifFile->SavedImages[i];
+
+        uint32_t imageSize = savedImage.ImageDesc.Width * savedImage.ImageDesc.Height * sizeof(Pixel);
+
+        settings.AddImage(i, imageSize);
+    }
+
     win->CreateViewer(settings);
 }
 
