@@ -42,16 +42,65 @@ bool GIFFile::Update()
     return true;
 }
 
+// LZW Decompression Algorithm based on GifLib documentation: https://giflib.sourceforge.net/whatsinagif/lzw_image_data.html
+bool LoadGIFToImage(Image& img, const SavedImage& savedImage, const GifFileType* parentGif)
+{
+    const GifImageDesc& imageDesc = savedImage.ImageDesc;
+
+    CHECK(imageDesc.Width > 0 && imageDesc.Height > 0, false, "Invalid GIF image dimensions!");
+
+    ColorMapObject* colorMap = imageDesc.ColorMap;
+    if (!colorMap && parentGif) {
+        colorMap = parentGif->SColorMap;
+    }
+
+    CHECK(colorMap != nullptr && colorMap->ColorCount > 0, false, "Missing or invalid color map!");
+
+    CHECK(img.Create(imageDesc.Width, imageDesc.Height), false, "Failed to create image of size %dx%d!", imageDesc.Width, imageDesc.Height);
+
+    Pixel* pixelBuffer = img.GetPixelsBuffer();
+    CHECK(pixelBuffer != nullptr, false, "Failed to retrieve pixel buffer!");
+
+    GifByteType* rasterBits = savedImage.RasterBits;
+    CHECK(rasterBits != nullptr, false, "Missing raster data in the GIF!");
+
+    GifByteType code     = rasterBits[0];
+    GifByteType prevCode = code;
+
+    GifColorType& color = colorMap->Colors[code];
+    pixelBuffer[0]      = Pixel(color.Red, color.Green, color.Blue);
+
+    for (int i = 1; i < imageDesc.Width * imageDesc.Height; ++i) {
+        code = rasterBits[i];
+
+        if (code < colorMap->ColorCount) {
+            GifColorType& color = colorMap->Colors[code];
+            pixelBuffer[i]      = Pixel(color.Red, color.Green, color.Blue);
+
+            GifByteType k = code;
+
+            if (prevCode < colorMap->ColorCount) {
+            }
+        } else {
+            GifByteType k       = prevCode;
+            GifColorType& color = colorMap->Colors[k];
+            pixelBuffer[i]      = Pixel(color.Red, color.Green, color.Blue);
+
+            if (prevCode < colorMap->ColorCount) {
+            }
+        }
+
+        prevCode = code;
+    }
+
+    return true;
+}
+
 bool GIFFile::LoadImageToObject(Image& img, uint32 index)
 {
-    Buffer buf;
-    auto bf = obj->GetData().GetEntireFile();
-    if (bf.IsValid() == false) {
-        buf = this->obj->GetData().CopyEntireFile();
-        CHECK(buf.IsValid(), false, "Fail to copy Entire file");
-        bf = (BufferView) buf;
-    }
-    CHECK(img.Create(bf), false, "");
+    CHECK(index < gifFile->ImageCount, false, "Index out of bounds!");
+
+    LoadGIFToImage(img, gifFile->SavedImages[index], gifFile);
 
     return true;
 }

@@ -28,11 +28,17 @@ void CreateImageView(Reference<GView::View::WindowInterface> win, Reference<GIF:
     win->CreateViewer(settings);
 }
 
+// void CreateBufferView(Reference<GView::View::WindowInterface> win, Reference<GIF::GIFFile> gif)
+// {
+//     BufferViewer::Settings settings;
+// }
+
 PLUGIN_EXPORT bool PopulateWindow(Reference<GView::View::WindowInterface> win)
 {
     auto gif = win->GetObject()->GetContentType<GIF::GIFFile>();
     gif->Update();
 
+    // CreateContentView(win, gif);
     CreateImageView(win, gif);
 
     win->AddPanel(Pointer<TabPage>(new GIF::Panels::Information(gif)), true);
