@@ -93,6 +93,18 @@ namespace Type
                     RecomputePanelsPositions();
                 }
             };
+
+             class Images : public AppCUI::Controls::TabPage
+            {
+                Reference<GView::Type::GIF::GIFFile> gif;
+                Reference<AppCUI::Controls::ListView> imagesList;
+
+                void UpdateImages();
+
+                public:
+                    Images(Reference<GView::Type::GIF::GIFFile> _gif);
+                    void OnAfterResize(int newWidth, int newHeight) override;
+            };
         }; // namespace Panels
     } // namespace GIF
 } // namespace Type

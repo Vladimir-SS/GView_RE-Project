@@ -59,6 +59,7 @@ PLUGIN_EXPORT bool PopulateWindow(Reference<GView::View::WindowInterface> win)
     CreateImageView(win, gif);
 
     win->AddPanel(Pointer<TabPage>(new GIF::Panels::Information(gif)), true);
+    win->AddPanel(Pointer<TabPage>(new GIF::Panels::Images(gif)), true);
 
     return true;
 }

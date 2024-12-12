@@ -49,23 +49,6 @@ void Panels::Information::UpdateGeneralInformation()
     }
 
     general->AddItem({ "Image Count", std::to_string(gif->gifFile->ImageCount) });
-
-    if (gif->gifFile->ImageCount > 0) {
-        general->AddItem("Images");
-        for (int i = 0; i < gif->gifFile->ImageCount; ++i) {
-            const SavedImage& savedImage = gif->gifFile->SavedImages[i];
-
-            general->AddItem(tempStr.Format("Image %d", i + 1));
-            general->AddItem({ "Width", std::to_string(savedImage.ImageDesc.Width) });
-            general->AddItem({ "Height", std::to_string(savedImage.ImageDesc.Height) });
-
-            if (savedImage.ImageDesc.ColorMap) {
-                general->AddItem({ "Local Color Map", std::to_string(savedImage.ImageDesc.ColorMap->ColorCount) + " colors" });
-            } else {
-                general->AddItem({ "Local Color Map", "None" });
-            }
-        }
-    }
 }
 
 void Panels::Information::UpdateIssues()
