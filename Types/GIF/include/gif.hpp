@@ -100,10 +100,14 @@ namespace Type
                 Reference<AppCUI::Controls::ListView> imagesList;
 
                 void UpdateImages();
+                void RecomputePanelsPositions();
 
-                public:
-                    Images(Reference<GView::Type::GIF::GIFFile> _gif);
-                    void OnAfterResize(int newWidth, int newHeight) override;
+              public:
+                Images(Reference<GView::Type::GIF::GIFFile> _gif);
+                virtual void OnAfterResize(int newWidth, int newHeight) override
+                {
+                    RecomputePanelsPositions();
+                }
             };
         }; // namespace Panels
     } // namespace GIF

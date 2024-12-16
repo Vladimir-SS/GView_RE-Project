@@ -35,3 +35,16 @@ void Panels::Images::UpdateImages()
         }
     }
 }
+
+void Panels::Images::RecomputePanelsPositions()
+{
+    int py = 0;
+    int w  = this->GetWidth();
+    int h  = this->GetHeight();
+
+    if ((!imagesList.IsValid())) {
+        return;
+    }
+
+    this->imagesList->Resize(w, h);
+}
