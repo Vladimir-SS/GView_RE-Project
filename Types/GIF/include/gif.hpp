@@ -16,6 +16,15 @@ namespace Type
             char version[3];   // "87a" or "89a"
         };
 
+        struct LogicalScreenDescriptor
+        {
+            uint16_t canvasWidth;
+            uint16_t canvasHeight;
+            uint8_t  packedFields;
+            uint8_t  backgroundColorIndex;
+            uint8_t  pixelAspectRatio;
+        };
+
 #pragma pack(pop)
 
         class GIFFile : public TypeInterface, public View::ImageViewer::LoadImageInterface

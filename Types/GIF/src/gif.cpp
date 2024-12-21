@@ -12,7 +12,26 @@ using namespace GView::View;
 extern "C" {
 PLUGIN_EXPORT bool Validate(const AppCUI::Utils::BufferView& buf, const std::string_view& extension)
 {
-    // all good
+    // Expect at least 6 bytes (header) + 7 bytes (logical screen descriptor)
+    if (buf.GetLength() < sizeof(GIF::Header) + sizeof(GIF::LogicalScreenDescriptor)) {
+        return false;
+    }
+
+    auto header = buf.GetObject<GIF::Header>();
+    if (memcmp(header->signature, "GIF", 3) != 0) {
+        return false;
+    }
+
+    if (memcmp(header->version, "87a", 3) != 0 &&
+        memcmp(header->version, "89a", 3) != 0) {
+        return false;
+    }
+
+    auto lsd = buf.GetObject<GIF::LogicalScreenDescriptor>(sizeof(GIF::Header));
+    if ((lsd->canvasWidth == 0) || (lsd->canvasHeight == 0)) {
+        return false;
+    }
+
     return true;
 }
 PLUGIN_EXPORT TypeInterface* CreateInstance()
