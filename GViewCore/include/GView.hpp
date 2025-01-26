@@ -995,11 +995,15 @@ namespace View
         struct CORE_EXPORT LoadImageInterface {
             virtual bool LoadImageToObject(Image& img, uint32 index) = 0;
         };
+        struct CORE_EXPORT LoadGifImageInterface {
+            virtual bool LoadGifImageToObject(Image& img,long long& delayTime, uint32 index) = 0;
+        };
         struct CORE_EXPORT Settings {
             void* data;
 
             Settings();
             void SetLoadImageCallback(Reference<LoadImageInterface> cbk);
+            void SetLoadGifImageCallback(Reference<LoadGifImageInterface> cbk);
             void AddImage(uint64 offset, uint64 size);
             bool SetName(std::string_view name);
         };

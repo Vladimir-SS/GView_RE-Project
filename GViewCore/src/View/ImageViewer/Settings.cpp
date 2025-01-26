@@ -7,6 +7,7 @@ SettingsData::SettingsData()
 {
     this->imgList.reserve(8);
     this->loadImageCallback.Reset();
+    this->loadGifImageCallback.Reset();
 }
 Settings::Settings()
 {
@@ -16,6 +17,11 @@ void Settings::SetLoadImageCallback(Reference<LoadImageInterface> cbk)
 {
     if (cbk != nullptr)
         ((SettingsData*) (this->data))->loadImageCallback = cbk;
+}
+void Settings::SetLoadGifImageCallback(Reference<LoadGifImageInterface> cbk)
+{
+    if (cbk != nullptr)
+        ((SettingsData*) (this->data))->loadGifImageCallback = cbk;
 }
 void Settings::AddImage(uint64 offset, uint64 size)
 {

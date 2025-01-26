@@ -1,10 +1,107 @@
 #include "ImageViewer.hpp"
+#include <iostream>
 
+using namespace AppCUI::Application;
+using namespace AppCUI::Controls;
+using namespace AppCUI::Dialogs;
+using namespace AppCUI::Graphics;
 using namespace GView::View::ImageViewer;
+
+constexpr uint32 VIDEO_WIDTH  = 150;
+constexpr uint32 VIDEO_HEIGHT = 60;
+
+using namespace std::string_literals;
+
+constexpr uint32 BUTTON_ID_PLAY = 1;
+constexpr uint32 BUTTON_ID_STOP = 2;
+
+ImageRenderingMethod renderMethod = ImageRenderingMethod::PixelTo16ColorsSmallBlock;
+ImageScaleMethod scale                         = ImageScaleMethod::NoScale;
+constexpr long long DEFAULT_DELAY_MILLISECONDS = 0;
+
+// TODO:
+// 1.Make command Open Player open only if no other window is set
+// 2.Thread safety and no more than 1 thread when playing on the main window(pressing space)
+// 3.Improve Player and Animation to work without requiring window changes
+// 4.Refactorization
+
+VideoScreen::VideoScreen(std::string_view layout, Instance* instancePtr)
+                : UserControl(layout), continueAnimation(false), currentFrame(0), instanceRef(Reference<Instance>(instancePtr))
+{
+    initialImageIndex = instancePtr->currentImageIndex;
+    instanceRef->currentImageIndex = 0;
+    delayTimeMilliseconds          = 0;
+}
+
+void VideoScreen::Paint(Graphics::Renderer& renderer)
+{   
+    instanceRef->settings->loadGifImageCallback->LoadGifImageToObject(instanceRef->img, this->delayTimeMilliseconds, instanceRef->currentImageIndex);
+    if (continueAnimation) {
+        renderer.Clear(' ', { Color::Transparent, Color::Transparent });
+
+        renderer.DrawImage(instanceRef->img, 0, 0, renderMethod, scale);
+
+        //delayTimeMilliseconds = (instanceRef->img.GetDelayTime());
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayTimeMilliseconds + DEFAULT_DELAY_MILLISECONDS));
+        
+        uint32 noImages = instanceRef->settings->imgList.size();
+        currentFrame++;
+        if ((uint32) currentFrame >= noImages) {
+            currentFrame      = 0;
+            continueAnimation = false;
+        } else {
+            instanceRef->currentImageIndex = currentFrame;
+        }
+
+        instanceRef->RaiseEvent(AppCUI::Controls::Event::ButtonClicked);
+    } else {
+        instanceRef->currentImageIndex = initialImageIndex;
+    }
+
+    //instanceRef->settings->loadImageCallback->LoadImageToObject(instanceRef->img, instanceRef->currentImageIndex);
+}
+bool VideoScreen::OnFrameUpdate()
+{
+    if (continueAnimation) {
+        return true;
+    }
+
+    return false;
+}
+
+GIF_Player_Window::GIF_Player_Window(Instance* instancePtr) : Window("GIF Player", "d:c,w:150,h:60", WindowFlags::FixedPosition)
+{
+    Factory::Button::Create(this, "Play", "x:0,y:0,w:50%,h:2", BUTTON_ID_PLAY, ButtonFlags::None);
+    Factory::Button::Create(this, "Stop", "x:50%,y:0,w:50%,h:2", BUTTON_ID_STOP, ButtonFlags::None);
+
+    auto videoScreen = std::make_unique<VideoScreen>("x:0,y:2,w:150,h:60", instancePtr);
+
+    myVideo = videoScreen.get();
+    AddChildControl(std::move(videoScreen));
+}
+
+bool GIF_Player_Window::OnEvent(Reference<Control>, Event eventType, int controlID)
+{
+    if (eventType == Event::WindowClose) {
+        RemoveMe();
+        //isOpen = false;
+        return true;
+    }
+    if (eventType == Event::ButtonClicked) {
+            if (controlID == BUTTON_ID_PLAY) {
+            myVideo->SetContinueAnimation(true);
+            } else if (controlID == BUTTON_ID_STOP) {
+            myVideo->SetContinueAnimation(false);
+            }
+            return true;
+    }
+    return false;
+}
+
 using namespace GView::View::ImageViewer::Commands;
 using namespace AppCUI::Input;
 
-Config Instance::config;
+GView::View::ImageViewer::Config Instance::config;
 
 Instance::Instance(Reference<GView::Object> _obj, Settings* _settings) : settings(nullptr), ViewControl("Image View")
 {
@@ -34,6 +131,7 @@ Instance::Instance(Reference<GView::Object> _obj, Settings* _settings) : setting
     // load first image
     LoadImage();
 }
+
 ImageScaleMethod Instance::NextPreviousScale(bool next)
 {
     switch (scale)
@@ -56,17 +154,28 @@ ImageScaleMethod Instance::NextPreviousScale(bool next)
         return ImageScaleMethod::NoScale;
     }
 }
+
 void Instance::RedrawImage()
 {
     this->imgView->SetImage(this->img, ImageRenderingMethod::PixelTo16ColorsSmallBlock, scale);
 }
+
 void Instance::LoadImage()
-{
-    if (this->settings->loadImageCallback->LoadImageToObject(this->img, this->currentImageIndex))
+{   
+    long long delay = 0;
+    if (this->settings->loadGifImageCallback->LoadGifImageToObject(this->img,*&delay ,this->currentImageIndex))
     {
         RedrawImage();
     }
 }
+
+void Instance::LoadImageWith(long long& delayTimeMilliseconds)
+{
+    if (this->settings->loadGifImageCallback->LoadGifImageToObject(this->img, delayTimeMilliseconds, this->currentImageIndex)) {
+        RedrawImage();
+    }
+}
+
 bool Instance::OnUpdateCommandBar(AppCUI::Application::CommandBar& commandBar)
 {
     commandBar.SetCommand(ZoomIn.Key, ZoomIn.Caption, ZoomIn.CommandId);
@@ -76,27 +185,101 @@ bool Instance::OnUpdateCommandBar(AppCUI::Application::CommandBar& commandBar)
         //prev/next image
         commandBar.SetCommand(NextImage.Key, NextImage.Caption, NextImage.CommandId);
         commandBar.SetCommand(PrevImage.Key, PrevImage.Caption, PrevImage.CommandId);
+        commandBar.SetCommand(OpenPlayWindow.Key, OpenPlayWindow.Caption, OpenPlayWindow.CommandId);
     }
     return false;
 }
+
+// TODO:Make the Commands be implemented in a single common function
+//namespace Instance
+//{
+//
+//    void currentImageUpdater(GView::View::ImageViewer::Instance* instance)
+//    {
+//        instance->currentImageIndex = 0;
+//        for (; (size_t) instance->currentImageIndex < instance->settings->imgList.size(); instance->currentImageIndex++) {
+//            LoadImage();
+//
+//            long long delayMiliseconds = (long long) (instance->img.GetDelayTime());
+//            std::this_thread::sleep_for(std::chrono::milliseconds(delayMiliseconds + 100));
+//        }
+//    }
+//} // namespace Instance
+
 bool Instance::OnKeyEvent(AppCUI::Input::Key keyCode, char16 characterCode)
 {
-    switch (keyCode)
-    {
+    switch (keyCode) {
     case Key::PageUp:
-        if (this->currentImageIndex > 0)
-        {
-            this->currentImageIndex--;
-            LoadImage();
+        if ((size_t) this->currentImageIndex + 1 < this->settings->imgList.size()) {
+            this->currentImageIndex++;
+        } else {
+            this->currentImageIndex = 0;
         }
+        LoadImage();
         return true;
     case Key::PageDown:
-        if ((size_t) this->currentImageIndex + 1 < this->settings->imgList.size())
-        {
-            this->currentImageIndex++;
-            LoadImage();
+        if (this->currentImageIndex > 0) {
+            this->currentImageIndex--;
+        } else {
+            this->currentImageIndex = (uint32) (this->settings->imgList.size()) - 1;
         }
+        LoadImage();
         return true;
+    case Key::Space: {
+        uint32 previousIndex = this->currentImageIndex;
+
+        std::thread updater(
+              [this](uint32 previousIndex) {
+                  this->currentImageIndex = 0;
+                  long long delayTimeMilliseconds = 0;
+
+                  for (; this->currentImageIndex < (uint32) this->settings->imgList.size(); this->currentImageIndex++) {
+                      LoadImageWith(delayTimeMilliseconds);
+                      
+                      //this->RecomputeLayout();
+
+                      this->RaiseEvent(AppCUI::Controls::Event::ButtonClicked);
+
+                      std::this_thread::sleep_for(std::chrono::milliseconds(delayTimeMilliseconds + DEFAULT_DELAY_MILLISECONDS));
+                  }
+
+                  this->currentImageIndex = previousIndex;
+                  LoadImage();
+                  // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                  // this->currentImageIndex = 1;
+                  // LoadImage();
+              },
+              previousIndex);
+
+        updater.detach();
+
+        // uint32 previousIndex    = this->currentImageIndex;
+        // this->currentImageIndex = 0;
+        // for (; (size_t) this->currentImageIndex < this->settings->imgList.size(); this->currentImageIndex++) {
+        //     LoadImage();
+
+        //    long long delayMiliseconds = (long long) (this->img.GetDelayTime());
+        //    std::this_thread::sleep_for(std::chrono::milliseconds(delayMiliseconds+500));
+        //}
+        //
+        //// Reload to previous image
+        // this->currentImageIndex = previousIndex;
+        // LoadImage();
+        return true;
+    }
+    case Key::O:
+        //if (GIF_Player_Window::isOpen) {
+        //    GIF_Player_Window::isOpen = true;
+        //    Application::AddWindow(std::make_unique<GIF_Player_Window>(this));
+        //    return true;
+        //}
+        //return false;
+        
+        Application::AddWindow(std::make_unique<GIF_Player_Window>(this));
+        return true;
+        
+        //if (!Application::Init(InitializationFlags::Maximized | InitializationFlags::EnableFPSMode | InitializationFlags::DisableAutoCloseDesktop))
+        //    return 1;
     }
 
     switch (characterCode)
@@ -115,6 +298,7 @@ bool Instance::OnKeyEvent(AppCUI::Input::Key keyCode, char16 characterCode)
 
     return ViewControl::OnKeyEvent(keyCode, characterCode);
 }
+
 bool Instance::OnEvent(Reference<Control>, Event eventType, int ID)
 {
     if (eventType != Event::Command)
@@ -130,22 +314,28 @@ bool Instance::OnEvent(Reference<Control>, Event eventType, int ID)
         this->RedrawImage();
         return true;
     case CMD_ID_PREV_IMAGE:
-        if (this->currentImageIndex > 0)
-        {
+        if (this->currentImageIndex > 0) {
             this->currentImageIndex--;
-            LoadImage();
+        } else {
+            this->currentImageIndex = (uint32) (this->settings->imgList.size()) - 1;
         }
+        LoadImage();
         return true;
     case CMD_ID_NEXT_IMAGE:
-        if ((size_t) this->currentImageIndex + 1 < this->settings->imgList.size())
-        {
+        if ((size_t) this->currentImageIndex + 1 < this->settings->imgList.size()) {
             this->currentImageIndex++;
-            LoadImage();
+        } else {
+            this->currentImageIndex = 0;
         }
+        LoadImage();
+        return true;
+    case CMD_ID_OPEN_PLAY:
+        Application::AddWindow(std::make_unique<GIF_Player_Window>(this));
         return true;
     }
     return false;
 }
+
 bool Instance::GoTo(uint64 offset)
 {
     for (uint32 idx = 0; idx < settings->imgList.size(); idx++)
@@ -162,10 +352,12 @@ bool Instance::GoTo(uint64 offset)
     }
     return false;
 }
+
 bool Instance::Select(uint64 offset, uint64 size)
 {
     return false; // no selection is possible in this mode
 }
+
 bool Instance::ShowGoToDialog()
 {
     GoToDialog dlg(this->settings.get(), this->currentImageIndex, this->obj->GetData().GetSize());
@@ -183,10 +375,12 @@ bool Instance::ShowGoToDialog()
     }
     return true;
 }
+
 bool Instance::ShowFindDialog()
 {
     NOT_IMPLEMENTED(false);
 }
+
 bool Instance::ShowCopyDialog()
 {
     NOT_IMPLEMENTED(false);
@@ -240,6 +434,7 @@ bool Instance::GetPropertyValue(uint32 id, PropertyValue& value)
     }
     return false;
 }
+
 bool Instance::SetPropertyValue(uint32 id, const PropertyValue& value, String& error)
 {
     switch (static_cast<PropertyID>(id))
@@ -267,9 +462,11 @@ bool Instance::SetPropertyValue(uint32 id, const PropertyValue& value, String& e
     error.SetFormat("Unknown internat ID: %u", id);
     return false;
 }
+
 void Instance::SetCustomPropertyValue(uint32 propertyID)
 {
 }
+
 bool Instance::IsPropertyValueReadOnly(uint32 propertyID)
 {
     switch (static_cast<PropertyID>(propertyID))
@@ -281,6 +478,7 @@ bool Instance::IsPropertyValueReadOnly(uint32 propertyID)
 
     return false;
 }
+
 const vector<Property> Instance::GetPropertiesList()
 {
     return {
@@ -302,3 +500,15 @@ bool Instance::UpdateKeys(KeyboardControlsInterface* interface)
     return true;
 }
 #undef BT
+
+
+// Test code for App Event Loop
+//this->RepaintStatus |= REPAINT_STATUS_DRAW;
+
+// this->RepaintStatus |= REPAINT_STATUS_ALL;
+
+// this->RepaintStatus |= REPAINT_STATUS_DRAW;
+// ComputePositions();
+// UpdateCommandBar();
+// this->Paint();
+// this->terminal->Update();

@@ -27,7 +27,7 @@ namespace Type
 
 #pragma pack(pop)
 
-        class GIFFile : public TypeInterface, public View::ImageViewer::LoadImageInterface
+        class GIFFile : public TypeInterface, public View::ImageViewer::LoadImageInterface,public View::ImageViewer::LoadGifImageInterface
         {
           public:
             GifFileType* gifFile; // Giflib's file type structure
@@ -51,6 +51,9 @@ namespace Type
             }
 
             bool LoadImageToObject(Image& img, uint32 index) override;
+
+            long long getGifImageDelayTimeInMilliseconds(const SavedImage& savedImage);
+            bool LoadGifImageToObject(Image& img,long long& delayTime, uint32 index) override;
 
             bool UpdateKeys(KeyboardControlsInterface* interface) override
             {

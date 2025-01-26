@@ -43,6 +43,7 @@ void CreateImageView(Reference<GView::View::WindowInterface> win, Reference<GIF:
 {
     GView::View::ImageViewer::Settings settings;
     settings.SetLoadImageCallback(gif.ToBase<View::ImageViewer::LoadImageInterface>());
+    settings.SetLoadGifImageCallback(gif.ToBase<View::ImageViewer::LoadGifImageInterface>());
 
     for (uint32_t i = 0; i < gif->gifFile->ImageCount; ++i) {
         const SavedImage& savedImage = gif->gifFile->SavedImages[i];

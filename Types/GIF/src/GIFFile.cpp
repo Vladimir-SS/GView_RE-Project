@@ -104,3 +104,31 @@ bool GIFFile::LoadImageToObject(Image& img, uint32 index)
 
     return true;
 }
+
+long long GIFFile::getGifImageDelayTimeInMilliseconds(const SavedImage& savedImage)
+{
+    // Get the delay time between each image
+    for (uint32 index = 0; index < savedImage.ExtensionBlockCount; index++) {
+        const ExtensionBlock& extensionBlock = savedImage.ExtensionBlocks[index];
+        if (extensionBlock.Function == GRAPHICS_EXT_FUNC_CODE) {
+            GraphicsControlBlock* graphicsControlBlock = new GraphicsControlBlock();
+            DGifExtensionToGCB(extensionBlock.ByteCount, extensionBlock.Bytes, graphicsControlBlock);
+            long long delayTime = (uint32) graphicsControlBlock->DelayTime * 10; // Save time in miliseconds
+            
+            return delayTime;
+        }
+    }
+
+    return 0;
+}
+
+bool GIFFile::LoadGifImageToObject(Image& img,long long& delayTime, uint32 index)
+{
+    CHECK(index < gifFile->ImageCount, false, "Index out of bounds!");
+
+    LoadGIFToImage(img, gifFile->SavedImages[index], gifFile);
+
+    delayTime = getGifImageDelayTimeInMilliseconds(gifFile->SavedImages[index]);
+
+    return true;
+}
