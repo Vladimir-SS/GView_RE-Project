@@ -15,9 +15,9 @@ using namespace std::string_literals;
 constexpr uint32 BUTTON_ID_PLAY = 1;
 constexpr uint32 BUTTON_ID_STOP = 2;
 
-ImageRenderingMethod renderMethod = ImageRenderingMethod::PixelTo16ColorsSmallBlock;
-ImageScaleMethod scale                         = ImageScaleMethod::NoScale;
-constexpr long long DEFAULT_DELAY_MILLISECONDS = 0;
+ImageRenderingMethod RENDER_METHOD              = ImageRenderingMethod::PixelTo16ColorsSmallBlock;
+ImageScaleMethod SCALE                          = ImageScaleMethod::NoScale;
+constexpr long long DEFAULT_DELAY_MILLISECONDS  = 0;
 
 // TODO:
 // 1.Make command Open Player open only if no other window is set
@@ -39,7 +39,7 @@ void VideoScreen::Paint(Graphics::Renderer& renderer)
     if (continueAnimation) {
         renderer.Clear(' ', { Color::Transparent, Color::Transparent });
 
-        renderer.DrawImage(instanceRef->img, 0, 0, renderMethod, scale);
+        renderer.DrawImage(instanceRef->img, 0, 0, RENDER_METHOD, SCALE);
 
         //delayTimeMilliseconds = (instanceRef->img.GetDelayTime());
         std::this_thread::sleep_for(std::chrono::milliseconds(delayTimeMilliseconds + DEFAULT_DELAY_MILLISECONDS));
@@ -157,11 +157,18 @@ ImageScaleMethod Instance::NextPreviousScale(bool next)
 
 void Instance::RedrawImage()
 {
-    this->imgView->SetImage(this->img, ImageRenderingMethod::PixelTo16ColorsSmallBlock, scale);
+    this->imgView->SetImage(this->img, RENDER_METHOD, SCALE);
 }
 
 void Instance::LoadImage()
-{   
+{
+    if (this->settings->loadGifImageCallback == nullptr) {
+        if (this->settings->loadImageCallback->LoadImageToObject(this->img, this->currentImageIndex)) {
+            RedrawImage();
+        }
+        return;
+    }
+
     long long delay = 0;
     if (this->settings->loadGifImageCallback->LoadGifImageToObject(this->img,*&delay ,this->currentImageIndex))
     {

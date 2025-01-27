@@ -41,7 +41,7 @@ namespace View
             String name;
             vector<ImageInfo> imgList;            
             Reference<LoadImageInterface> loadImageCallback;
-            Reference<LoadGifImageInterface> loadGifImageCallback;
+            Reference<LoadGifImageInterface> loadGifImageCallback=nullptr;
             SettingsData();
         };
 
