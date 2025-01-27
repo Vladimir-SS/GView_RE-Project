@@ -22,8 +22,7 @@ PLUGIN_EXPORT bool Validate(const AppCUI::Utils::BufferView& buf, const std::str
         return false;
     }
 
-    if (memcmp(header->version, "87a", 3) != 0 &&
-        memcmp(header->version, "89a", 3) != 0) {
+    if (memcmp(header->version, "87a", 3) != 0 && memcmp(header->version, "89a", 3) != 0) {
         return false;
     }
 
@@ -66,6 +65,61 @@ void CreateImageView(Reference<GView::View::WindowInterface> win, Reference<GIF:
 void CreateBufferView(Reference<GView::View::WindowInterface> win, Reference<GIF::GIFFile> gif)
 {
     BufferViewer::Settings settings;
+
+    AppCUI::uint64 offset = 0;
+
+    ColorPair headerColor{ Color::DarkGreen, Color::DarkBlue };
+    ColorPair logicalScreenDescColor{ Color::DarkGreen, Color::DarkBlue };
+    ColorPair rasterBitsColor{ Color::DarkRed, Color::DarkBlue };
+    ColorPair globalColorMapColor{ Color::Magenta, Color::DarkBlue };
+    ColorPair imageDescColor{ Color::Silver, Color::Black };
+    ColorPair imageColorMapColor{ Color::Pink, Color::Black };
+    ColorPair extensionBlockColor{ Color::White, Color::Black };
+    ColorPair trailerColor{ Color::Green, Color::Black };
+
+    settings.AddZone(0, sizeof(GIF::Header), headerColor, "Header");
+    offset += sizeof(GIF::Header);
+
+    settings.AddZone(offset, sizeof(GIF::LogicalScreenDescriptor), logicalScreenDescColor, "Logical Screen Descriptor");
+    offset += sizeof(GIF::LogicalScreenDescriptor);
+
+    GifFileType* gifFile = gif->gifFile;
+
+    if (gifFile->SColorMap != nullptr) {
+        size_t globalColorMapSize = gifFile->SColorMap->ColorCount * sizeof(GifColorType);
+        settings.AddZone(offset, globalColorMapSize, globalColorMapColor, "Global Color Map");
+
+        offset += globalColorMapSize;
+    }
+
+    for (int i = 0; i < gifFile->ImageCount; ++i) {
+        const SavedImage& savedImage = gifFile->SavedImages[i];
+
+        settings.AddZone(offset, 10, imageDescColor, "Image Descriptor");
+        offset += 10;
+
+        if (savedImage.ImageDesc.ColorMap != nullptr) {
+            size_t localColorMapSize = savedImage.ImageDesc.ColorMap->ColorCount * sizeof(GifColorType);
+            settings.AddZone(offset, localColorMapSize, imageColorMapColor, "Local Color Map");
+
+            offset += localColorMapSize;
+        }
+
+        size_t rasterBitsSize = savedImage.ImageDesc.Width * savedImage.ImageDesc.Height;
+        settings.AddZone(offset, rasterBitsSize, rasterBitsColor, "Raster Bits");
+        offset += rasterBitsSize;
+
+        for (int j = 0; j < savedImage.ExtensionBlockCount; ++j) {
+            const ExtensionBlock& extension = savedImage.ExtensionBlocks[j];
+            size_t extensionBlockSize       = extension.ByteCount;
+            settings.AddZone(offset, extensionBlockSize, extensionBlockColor, "Extension Block");
+
+            offset += extensionBlockSize;
+        }
+    }
+
+    settings.AddZone(offset, 1, trailerColor, "Trailer");
+
     gif->selectionZoneInterface = win->GetSelectionZoneInterfaceFromViewerCreation(settings);
 }
 
