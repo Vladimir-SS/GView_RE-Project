@@ -22,14 +22,16 @@ namespace View
             constexpr int32 CMD_ID_NEXT_IMAGE = 0xBF02;
             constexpr int32 CMD_ID_PREV_IMAGE = 0xBF03;
             constexpr int32 CMD_ID_OPEN_PLAY  = 0xBF04;
+            constexpr int32 CMD_ID_PLAY_IN_MAIN_WINDOW = 0xBF05;
 
             static KeyboardControl ZoomIn    = { Key::F3, "ZoomIn", "Zoom in the picture", CMD_ID_ZOOMIN };
             static KeyboardControl ZoomOut   = { Key::F2, "ZoomOut", "Zoom out the picture", CMD_ID_ZOOMOUT };
             static KeyboardControl NextImage = { Key::PageUp, "NextImage", "Go to the next image", CMD_ID_NEXT_IMAGE };
             static KeyboardControl PrevImage = { Key::PageDown, "PrevImage", "Go to the previous image", CMD_ID_PREV_IMAGE };
             static KeyboardControl OpenPlayWindow = { Key::O, "Open Play Window", "Open window to play gif animation", CMD_ID_OPEN_PLAY };
+            static KeyboardControl PlayInMainWindow = { Key::Space, "Play", "Play in Main Window", CMD_ID_PLAY_IN_MAIN_WINDOW };
 
-            static std::array ImageViewCommands = { &ZoomIn, &ZoomOut, &NextImage, &PrevImage, &OpenPlayWindow };
+            static std::array ImageViewCommands = { &ZoomIn, &ZoomOut, &NextImage, &PrevImage, &OpenPlayWindow, &PlayInMainWindow };
         }
 
         struct ImageInfo
@@ -70,6 +72,9 @@ namespace View
             void RedrawImage();
             ImageScaleMethod NextPreviousScale(bool next);
           public:
+            inline static bool startedMainWindowAnimation = false;
+            inline static bool gifPlayerWindowIsOpen      = false;
+
             Instance(Reference<GView::Object> obj, Settings* settings);
 
             virtual bool OnUpdateCommandBar(AppCUI::Application::CommandBar& commandBar) override;
@@ -95,6 +100,7 @@ namespace View
 
             friend class VideoScreen;
         };
+
         class VideoScreen : public AppCUI::Controls::UserControl
         {
           private:
