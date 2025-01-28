@@ -16,18 +16,17 @@ namespace Type
             char version[3];   // "87a" or "89a"
         };
 
-        struct LogicalScreenDescriptor
-        {
+        struct LogicalScreenDescriptor {
             uint16_t canvasWidth;
             uint16_t canvasHeight;
-            uint8_t  packedFields;
-            uint8_t  backgroundColorIndex;
-            uint8_t  pixelAspectRatio;
+            uint8_t packedFields;
+            uint8_t backgroundColorIndex;
+            uint8_t pixelAspectRatio;
         };
 
 #pragma pack(pop)
 
-        class GIFFile : public TypeInterface, public View::ImageViewer::LoadImageInterface,public View::ImageViewer::LoadGifImageInterface
+        class GIFFile : public TypeInterface, public View::ImageViewer::LoadImageInterface, public View::ImageViewer::LoadGifImageInterface
         {
           public:
             GifFileType* gifFile; // Giflib's file type structure
@@ -53,7 +52,7 @@ namespace Type
             bool LoadImageToObject(Image& img, uint32 index) override;
 
             long long getGifImageDelayTimeInMilliseconds(const SavedImage& savedImage);
-            bool LoadGifImageToObject(Image& img,long long& delayTime, uint32 index) override;
+            bool LoadGifImageToObject(Image& img, long long& delayTime, uint32 index) override;
 
             bool UpdateKeys(KeyboardControlsInterface* interface) override
             {
@@ -106,16 +105,18 @@ namespace Type
                 }
             };
 
-             class Images : public AppCUI::Controls::TabPage
+            class Images : public AppCUI::Controls::TabPage
             {
                 Reference<GView::Type::GIF::GIFFile> gif;
                 Reference<AppCUI::Controls::ListView> imagesList;
+                Reference<GView::View::WindowInterface> win;
 
                 void UpdateImages();
                 void RecomputePanelsPositions();
+                bool OnEvent(Reference<Control>, Event evnt, int controlID) override;
 
               public:
-                Images(Reference<GView::Type::GIF::GIFFile> _gif);
+                Images(Reference<GView::Type::GIF::GIFFile> gif, Reference<GView::View::WindowInterface> win);
                 virtual void OnAfterResize(int newWidth, int newHeight) override
                 {
                     RecomputePanelsPositions();

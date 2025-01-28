@@ -359,7 +359,13 @@ bool Instance::GoTo(uint64 offset)
 
 bool Instance::Select(uint64 offset, uint64 size)
 {
-    return false; // no selection is possible in this mode
+    if(offset >= 0 && offset < (int) this->settings->imgList.size()) {
+            this->currentImageIndex = offset;
+            LoadImage();
+            return true;
+        }
+
+    return false;
 }
 
 bool Instance::ShowGoToDialog()
